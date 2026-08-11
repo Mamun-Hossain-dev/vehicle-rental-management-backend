@@ -95,7 +95,7 @@ Responses use `{ "success": true, "data": ... }`. Errors use `{ "success": false
 
 Rental dates are inclusive. Same-day rental is one day. Client cannot set `total_amount`. Money multiplication uses integer cents before PostgreSQL stores `numeric(12,2)`.
 
-Overlap is checked in PostgreSQL:
+Overlap is checked with Knex query-builder:
 
 ```sql
 vehicle_id = ?
@@ -104,9 +104,9 @@ AND start_date <= new_end
 AND end_date >= new_start
 ```
 
-Update excludes its own ID. Create/update runs in a transaction and takes `pg_advisory_xact_lock(vehicle_id)`, serializing availability checks for the same vehicle. This closes the check-then-insert race between API requests. Every non-cancelled status blocks overlap, including completed rentals. Cancelled rentals remain as history.
+Update excludes its own ID. Create/update runs in a transaction and locks involved vehicle rows with `FOR UPDATE`, serializing availability checks for the same vehicle. This closes the check-then-insert race between API requests. Every non-cancelled status blocks overlap, including completed rentals. Cancelled rentals remain as history.
 
-The report finds rows overlapping the month, then clips each rental using `GREATEST(start_date, month_start)` and `LEAST(end_date, month_end)`. Inclusive clipped days are multiplied by the vehicle daily rate in SQL. July 29–August 3 contributes three August days and `9000.00` at `3000.00/day`. Active vehicles with no matching rental appear with zeros. Highest revenue uses monthly clipped revenue; ties use lowest vehicle ID. Soft-deleted vehicles are omitted, while their rentals remain because vehicle deletion uses `ON DELETE RESTRICT` and application soft deletion.
+The report uses a Knex subquery to select non-cancelled rentals overlapping the requested month. The service clips each range to the month and calculates inclusive days with decimal-safe money helpers. July 29–August 3 contributes three August days and `9000.00` at `3000.00/day`. Active vehicles with no matching rental appear with zeros. Highest revenue uses monthly clipped revenue; ties use lowest vehicle ID. Soft-deleted vehicles are omitted, while their rentals remain because vehicle deletion uses `ON DELETE RESTRICT` and application soft deletion.
 
 Photo types: JPEG, PNG, WebP. Maximum 5 MB. New photo replacement removes the old local file after a successful database update. Files are served from `/uploads/vehicles/<filename>`.
 

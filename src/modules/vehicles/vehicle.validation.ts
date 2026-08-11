@@ -1,51 +1,45 @@
-import { body, param, query, type ValidationChain } from 'express-validator';
+import Joi from 'joi';
 
-const id = () =>
-  param('id')
-    .isInt({ min: 1 })
-    .withMessage('id must be a positive integer')
-    .toInt();
-const name = () =>
-  body('name')
-    .trim()
-    .isLength({ min: 2, max: 120 })
-    .withMessage('name length must be 2 to 120 characters');
-const plateNumber = () =>
-  body('plate_number')
-    .trim()
-    .isLength({ min: 2, max: 30 })
-    .withMessage('plate_number length must be 2 to 30 characters')
-    .toUpperCase();
-const category = () =>
-  body('category')
-    .trim()
-    .isLength({ min: 2, max: 50 })
-    .withMessage('category length must be 2 to 50 characters');
-const dailyRate = () =>
-  body('daily_rate')
-    .matches(/^\d{1,10}(?:\.\d{1,2})?$/)
-    .withMessage(
-      'daily_rate must be a positive amount with at most 2 decimal places',
+const id = Joi.number().integer().positive().required();
+const fields = {
+  name: Joi.string().trim().min(2).max(120),
+  plate_number: Joi.string().trim().uppercase().min(2).max(30),
+  category: Joi.string().trim().min(2).max(50),
+  daily_rate: Joi.string()
+    .pattern(/^\d{1,10}(?:\.\d{1,2})?$/)
+    .custom((value: string, helpers) =>
+      Number(value) > 0 ? value : helpers.error('number.positive'),
     )
-    .custom((value: string) => Number(value) > 0);
+    .messages({ 'number.positive': 'daily_rate must be greater than zero' }),
+};
 
-export const vehicleListValidation: ValidationChain[] = [
-  query('page').default(1).isInt({ min: 1 }).toInt(),
-  query('limit').default(10).isInt({ min: 1, max: 100 }).toInt(),
-  query('category').optional().trim().isLength({ max: 50 }),
-  query('search').optional().trim().isLength({ max: 120 }),
-];
-export const vehicleIdValidation: ValidationChain[] = [id()];
-export const createVehicleValidation: ValidationChain[] = [
-  name(),
-  plateNumber(),
-  category(),
-  dailyRate(),
-];
-export const updateVehicleIdValidation: ValidationChain[] = [
-  id(),
-  name().optional(),
-  plateNumber().optional(),
-  category().optional(),
-  dailyRate().optional(),
-];
+export const vehicleListSchema = Joi.object({
+  body: Joi.object(),
+  params: Joi.object(),
+  query: Joi.object({
+    page: Joi.number().integer().min(1).default(1),
+    limit: Joi.number().integer().min(1).max(100).default(10),
+    category: Joi.string().trim().max(50),
+    search: Joi.string().trim().max(120),
+  }),
+});
+export const vehicleIdSchema = Joi.object({
+  body: Joi.object(),
+  query: Joi.object(),
+  params: Joi.object({ id }),
+});
+export const createVehicleSchema = Joi.object({
+  body: Joi.object({
+    name: fields.name.required(),
+    plate_number: fields.plate_number.required(),
+    category: fields.category.required(),
+    daily_rate: fields.daily_rate.required(),
+  }),
+  query: Joi.object(),
+  params: Joi.object(),
+});
+export const updateVehicleSchema = Joi.object({
+  body: Joi.object(fields),
+  query: Joi.object(),
+  params: Joi.object({ id }),
+});

@@ -34,13 +34,13 @@ Deletion over addition.
 ## Non-negotiable rules
 
 - Strict TypeScript. Never use `any`.
-- PostgreSQL + Knex only. Raw parameterized SQL for overlap/report calculations.
+- PostgreSQL + Knex query-builder only. Do not use raw database queries.
 - Controllers: HTTP only. Services: business rules. Repositories: database only.
 - Vehicle deletes are soft deletes. Rental deletes set `status = cancelled`.
 - Rental dates are inclusive date-only strings. Do not round-trip them through JS `Date`.
 - `total_amount` is server-calculated with decimal-safe string/BigInt helpers.
 - Active overlap statuses: `booked`, `ongoing`, `completed`. `cancelled` never blocks.
-- Create/update rentals inside a transaction with a per-vehicle advisory lock.
+- Create/update rentals inside a transaction with a vehicle row `FOR UPDATE` lock.
 - Protected route groups: `/vehicles`, `/rentals`, `/reports`.
 - Do not expose database errors or secrets.
 
@@ -61,8 +61,8 @@ npm run seed
 
 ## Change checklist
 
-- Update Joi schema when input shape changes.
+- Update Joi schemas when input shape changes.
 - Keep `.env.example`, README endpoint docs, and scripts accurate.
 - Check create and update overlap paths together.
-- Check monthly report clips rentals with `GREATEST`/`LEAST`.
+- Check monthly report clips each rental to requested month boundaries.
 - No TODO, placeholder, dead abstraction, or unrequested dependency.

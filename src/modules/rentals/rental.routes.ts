@@ -3,36 +3,36 @@ import { validate } from '../../middleware/validate.middleware.js';
 import { asyncHandler } from '../../utils/async-handler.js';
 import { RentalController } from './rental.controller.js';
 import {
-  createRentalValidation,
-  rentalIdValidation,
-  rentalListValidation,
-  updateRentalIdValidation,
+  createRentalSchema,
+  rentalIdSchema,
+  rentalListSchema,
+  updateRentalSchema,
 } from './rental.validation.js';
 
 const controller = new RentalController();
 export const rentalRouter = Router();
 rentalRouter.get(
   '/',
-  validate(rentalListValidation),
+  validate(rentalListSchema),
   asyncHandler(controller.list),
 );
 rentalRouter.get(
   '/:id',
-  validate(rentalIdValidation),
+  validate(rentalIdSchema),
   asyncHandler(controller.get),
 );
 rentalRouter.post(
   '/',
-  validate(createRentalValidation),
+  validate(createRentalSchema),
   asyncHandler(controller.create),
 );
 rentalRouter.put(
   '/:id',
-  validate(updateRentalIdValidation),
+  validate(updateRentalSchema),
   asyncHandler(controller.update),
 );
 rentalRouter.delete(
   '/:id',
-  validate(rentalIdValidation),
+  validate(rentalIdSchema),
   asyncHandler(controller.delete),
 );

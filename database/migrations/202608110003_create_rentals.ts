@@ -21,13 +21,13 @@ export const up = async (knex: Knex): Promise<void> => {
     table.index('status');
     table.index('start_date');
     table.index('end_date');
+    table.check(
+      "status IN ('booked', 'ongoing', 'completed', 'cancelled')",
+      [],
+      'rentals_status_check',
+    );
+    table.check('start_date <= end_date', [], 'rentals_dates_check');
   });
-  await knex.raw(
-    "ALTER TABLE rentals ADD CONSTRAINT rentals_status_check CHECK (status IN ('booked', 'ongoing', 'completed', 'cancelled'))",
-  );
-  await knex.raw(
-    'ALTER TABLE rentals ADD CONSTRAINT rentals_dates_check CHECK (start_date <= end_date)',
-  );
 };
 
 export const down = (knex: Knex): Promise<void> =>

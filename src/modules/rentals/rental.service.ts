@@ -4,6 +4,7 @@ import { ApiError } from '../../utils/api-error.js';
 import { inclusiveDays } from '../../utils/date.js';
 import { multiplyMoney } from '../../utils/money.js';
 import { VehicleRepository } from '../vehicles/vehicle.repository.js';
+import type { Vehicle } from '../vehicles/vehicle.types.js';
 import { RentalRepository } from './rental.repository.js';
 import type {
   Rental,
@@ -31,8 +32,10 @@ export class RentalService {
 
   create(input: RentalInput): Promise<Rental> {
     return this.database.transaction(async (trx) => {
-      await this.repository.lockVehicle(trx, input.vehicle_id);
-      const vehicle = await this.vehicles.findById(input.vehicle_id, trx);
+      const vehicle = await this.vehicles.findByIdForUpdate(
+        input.vehicle_id,
+        trx,
+      );
       if (!vehicle) throw new ApiError(404, 'Vehicle not found');
       await this.ensureAvailable(
         trx,
@@ -56,12 +59,14 @@ export class RentalService {
       const current = await this.repository.findById(id, trx);
       if (!current) throw new ApiError(404, 'Rental not found');
       const vehicleId = input.vehicle_id ?? current.vehicle_id;
-      for (const lockId of [...new Set([current.vehicle_id, vehicleId])].sort(
+      const lockIds = [...new Set([current.vehicle_id, vehicleId])].sort(
         (a, b) => a - b,
-      )) {
-        await this.repository.lockVehicle(trx, lockId);
+      );
+      let vehicle: Vehicle | undefined;
+      for (const lockId of lockIds) {
+        const locked = await this.vehicles.findByIdForUpdate(lockId, trx);
+        if (lockId === vehicleId) vehicle = locked;
       }
-      const vehicle = await this.vehicles.findById(vehicleId, trx);
       if (!vehicle) throw new ApiError(404, 'Vehicle not found');
       const start = input.start_date ?? current.start_date;
       const end = input.end_date ?? current.end_date;

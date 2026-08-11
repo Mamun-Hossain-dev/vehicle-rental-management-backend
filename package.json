@@ -9,15 +9,15 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "migrate": "tsx node_modules/knex/bin/cli.js --knexfile knexfile.ts migrate:latest",
-    "migrate:rollback": "tsx node_modules/knex/bin/cli.js --knexfile knexfile.ts migrate:rollback",
-    "seed": "tsx node_modules/knex/bin/cli.js --knexfile knexfile.ts seed:run"
+    "migrate": "tsx node_modules/knex/bin/cli.js --knexfile src/config/database.ts migrate:latest",
+    "migrate:rollback": "tsx node_modules/knex/bin/cli.js --knexfile src/config/database.ts migrate:rollback",
+    "seed": "tsx node_modules/knex/bin/cli.js --knexfile src/config/database.ts seed:run"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
-    "express-validator": "^7.2.1",
+    "joi": "^18.0.0",
     "jsonwebtoken": "^9.0.2",
     "knex": "^3.1.0",
     "multer": "^2.0.2",

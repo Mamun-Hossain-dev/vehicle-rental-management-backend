@@ -43,6 +43,17 @@ export class VehicleRepository {
       .first();
   }
 
+  findByIdForUpdate(
+    id: number,
+    executor: Knex.Transaction,
+  ): Promise<Vehicle | undefined> {
+    return executor<Vehicle>('vehicles')
+      .where({ id })
+      .whereNull('deleted_at')
+      .forUpdate()
+      .first();
+  }
+
   async create(
     input: VehicleInput & { photo_path: string | null },
   ): Promise<Vehicle> {

@@ -1,83 +1,63 @@
-import { body, param, query, type ValidationChain } from 'express-validator';
+import Joi from 'joi';
 
-const statuses = ['booked', 'ongoing', 'completed', 'cancelled'];
-const datePattern = /^\d{4}-\d{2}-\d{2}$/;
-const id = () =>
-  param('id')
-    .isInt({ min: 1 })
-    .withMessage('id must be a positive integer')
-    .toInt();
-const vehicleId = () =>
-  body('vehicle_id')
-    .isInt({ min: 1 })
-    .withMessage('vehicle_id must be a positive integer')
-    .toInt();
-const customerName = () =>
-  body('customer_name')
-    .trim()
-    .isLength({ min: 2, max: 120 })
-    .withMessage('customer_name length must be 2 to 120 characters');
-const customerPhone = () =>
-  body('customer_phone')
-    .trim()
-    .isLength({ min: 5, max: 30 })
-    .withMessage('customer_phone length must be 5 to 30 characters');
-const startDate = () =>
-  body('start_date')
-    .matches(datePattern)
-    .withMessage('start_date must use YYYY-MM-DD')
-    .isISO8601({ strict: true })
-    .withMessage('start_date must be valid');
-const endDate = () =>
-  body('end_date')
-    .matches(datePattern)
-    .withMessage('end_date must use YYYY-MM-DD')
-    .isISO8601({ strict: true })
-    .withMessage('end_date must be valid');
-const endAfterStart = () =>
-  body('end_date').custom((end: string, { req }) => {
-    const start = req.body.start_date as unknown;
-    if (typeof start === 'string' && end < start) {
-      throw new Error('start_date must not be after end_date');
-    }
-    return true;
-  });
+const id = Joi.number().integer().positive().required();
+const date = Joi.string()
+  .isoDate()
+  .pattern(/^\d{4}-\d{2}-\d{2}$/);
+const status = Joi.string().valid(
+  'booked',
+  'ongoing',
+  'completed',
+  'cancelled',
+);
+const fields = {
+  vehicle_id: Joi.number().integer().positive(),
+  customer_name: Joi.string().trim().min(2).max(120),
+  customer_phone: Joi.string().trim().min(5).max(30),
+  start_date: date,
+  end_date: date,
+};
 
-export const rentalListValidation: ValidationChain[] = [
-  query('vehicle_id').optional().isInt({ min: 1 }).toInt(),
-  query('status').optional().isIn(statuses),
-  query('start_date')
-    .optional()
-    .matches(datePattern)
-    .isISO8601({ strict: true }),
-  query('end_date')
-    .optional()
-    .matches(datePattern)
-    .isISO8601({ strict: true })
-    .custom((end: string, { req }) => {
-      const start = req.query?.start_date;
-      if (typeof start === 'string' && end < start) {
-        throw new Error('start_date must not be after end_date');
-      }
-      return true;
-    }),
-];
-export const rentalIdValidation: ValidationChain[] = [id()];
-export const createRentalValidation: ValidationChain[] = [
-  vehicleId(),
-  customerName(),
-  customerPhone(),
-  startDate(),
-  endDate(),
-  endAfterStart(),
-];
-export const updateRentalIdValidation: ValidationChain[] = [
-  id(),
-  vehicleId().optional(),
-  customerName().optional(),
-  customerPhone().optional(),
-  startDate().optional(),
-  endDate().optional(),
-  endAfterStart().optional(),
-  body('status').optional().isIn(statuses),
-];
+const dateOrder = (
+  value: { start_date?: string; end_date?: string },
+  helpers: Joi.CustomHelpers,
+) =>
+  value.start_date && value.end_date && value.start_date > value.end_date
+    ? helpers.error('date.order')
+    : value;
+
+export const rentalListSchema = Joi.object({
+  body: Joi.object(),
+  params: Joi.object(),
+  query: Joi.object({
+    vehicle_id: fields.vehicle_id,
+    status,
+    start_date: date,
+    end_date: date,
+  })
+    .custom(dateOrder)
+    .messages({ 'date.order': 'start_date must not be after end_date' }),
+});
+export const rentalIdSchema = Joi.object({
+  body: Joi.object(),
+  query: Joi.object(),
+  params: Joi.object({ id }),
+});
+export const createRentalSchema = Joi.object({
+  body: Joi.object({
+    vehicle_id: fields.vehicle_id.required(),
+    customer_name: fields.customer_name.required(),
+    customer_phone: fields.customer_phone.required(),
+    start_date: fields.start_date.required(),
+    end_date: fields.end_date.required(),
+  })
+    .custom(dateOrder)
+    .messages({ 'date.order': 'start_date must not be after end_date' }),
+  query: Joi.object(),
+  params: Joi.object(),
+});
+export const updateRentalSchema = Joi.object({
+  body: Joi.object({ ...fields, status }).min(1),
+  query: Joi.object(),
+  params: Joi.object({ id }),
+});

@@ -4,38 +4,38 @@ import { validate } from '../../middleware/validate.middleware.js';
 import { asyncHandler } from '../../utils/async-handler.js';
 import { VehicleController } from './vehicle.controller.js';
 import {
-  createVehicleValidation,
-  updateVehicleIdValidation,
-  vehicleIdValidation,
-  vehicleListValidation,
+  createVehicleSchema,
+  updateVehicleSchema,
+  vehicleIdSchema,
+  vehicleListSchema,
 } from './vehicle.validation.js';
 
 const controller = new VehicleController();
 export const vehicleRouter = Router();
 vehicleRouter.get(
   '/',
-  validate(vehicleListValidation),
+  validate(vehicleListSchema),
   asyncHandler(controller.list),
 );
 vehicleRouter.get(
   '/:id',
-  validate(vehicleIdValidation),
+  validate(vehicleIdSchema),
   asyncHandler(controller.get),
 );
 vehicleRouter.post(
   '/',
   vehiclePhotoUpload.single('photo'),
-  validate(createVehicleValidation),
+  validate(createVehicleSchema),
   asyncHandler(controller.create),
 );
 vehicleRouter.put(
   '/:id',
   vehiclePhotoUpload.single('photo'),
-  validate(updateVehicleIdValidation),
+  validate(updateVehicleSchema),
   asyncHandler(controller.update),
 );
 vehicleRouter.delete(
   '/:id',
-  validate(vehicleIdValidation),
+  validate(vehicleIdSchema),
   asyncHandler(controller.delete),
 );

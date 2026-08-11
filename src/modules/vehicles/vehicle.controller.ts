@@ -11,7 +11,7 @@ export class VehicleController {
 
   list = async (req: Request, res: Response): Promise<void> => {
     const result = await this.service.list(
-      req.query as unknown as VehicleFilters,
+      req.validatedQuery as VehicleFilters,
     );
     res.json({ success: true, data: result.data, meta: result.meta });
   };

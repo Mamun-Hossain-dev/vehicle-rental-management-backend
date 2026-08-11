@@ -8,7 +8,7 @@ export class ReportController {
   monthly = async (req: Request, res: Response): Promise<void> => {
     res.json({
       success: true,
-      data: await this.service.monthly(req.query as unknown as ReportQuery),
+      data: await this.service.monthly(req.validatedQuery as ReportQuery),
     });
   };
 }

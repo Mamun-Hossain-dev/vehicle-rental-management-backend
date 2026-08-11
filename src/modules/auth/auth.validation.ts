@@ -1,13 +1,10 @@
-import { body, type ValidationChain } from 'express-validator';
+import Joi from 'joi';
 
-export const loginValidation: ValidationChain[] = [
-  body('email')
-    .isEmail()
-    .withMessage('email must be valid')
-    .isLength({ max: 254 })
-    .normalizeEmail(),
-  body('password')
-    .isString()
-    .isLength({ min: 8, max: 128 })
-    .withMessage('password length must be 8 to 128 characters'),
-];
+export const loginSchema = Joi.object({
+  body: Joi.object({
+    email: Joi.string().email().max(254).required(),
+    password: Joi.string().min(8).max(128).required(),
+  }).required(),
+  query: Joi.object(),
+  params: Joi.object(),
+});

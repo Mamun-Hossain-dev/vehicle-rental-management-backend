@@ -23,4 +23,8 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    files: ['src/config/env.ts', 'src/middleware/validate.middleware.ts'],
+    rules: { '@typescript-eslint/no-unsafe-assignment': 'off' },
+  },
 );

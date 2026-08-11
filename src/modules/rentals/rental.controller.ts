@@ -13,7 +13,10 @@ export class RentalController {
     req: Request<object, object, object, RentalFilters>,
     res: Response,
   ): Promise<void> => {
-    res.json({ success: true, data: await this.service.list(req.query) });
+    res.json({
+      success: true,
+      data: await this.service.list(req.validatedQuery as RentalFilters),
+    });
   };
   get = async (req: Request<{ id: string }>, res: Response): Promise<void> => {
     res.json({

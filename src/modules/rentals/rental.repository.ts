@@ -24,13 +24,6 @@ export class RentalRepository {
     return executor<Rental>('rentals').where({ id }).first();
   }
 
-  async lockVehicle(
-    executor: Knex.Transaction,
-    vehicleId: number,
-  ): Promise<void> {
-    await executor.raw('SELECT pg_advisory_xact_lock(?)', [vehicleId]);
-  }
-
   async hasOverlap(
     executor: Knex.Transaction,
     vehicleId: number,
@@ -38,18 +31,14 @@ export class RentalRepository {
     end: string,
     excludeId?: number,
   ): Promise<boolean> {
-    const result = await executor.raw<{ rows: Array<{ exists: boolean }> }>(
-      `SELECT EXISTS (
-         SELECT 1 FROM rentals
-         WHERE vehicle_id = ?
-           AND status != 'cancelled'
-           AND start_date <= ?::date
-           AND end_date >= ?::date
-           AND (?::integer IS NULL OR id != ?::integer)
-       ) AS exists`,
-      [vehicleId, end, start, excludeId ?? null, excludeId ?? null],
-    );
-    return result.rows[0]?.exists ?? false;
+    const query = executor<Rental>('rentals')
+      .select('id')
+      .where({ vehicle_id: vehicleId })
+      .whereNot('status', 'cancelled')
+      .where('start_date', '<=', end)
+      .where('end_date', '>=', start);
+    if (excludeId) query.whereNot('id', excludeId);
+    return Boolean(await query.first());
   }
 
   async create(
