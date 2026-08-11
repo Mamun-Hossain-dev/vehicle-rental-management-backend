@@ -1,0 +1,41 @@
+import { Router } from 'express';
+import { vehiclePhotoUpload } from '../../middleware/upload.middleware.js';
+import { validate } from '../../middleware/validate.middleware.js';
+import { asyncHandler } from '../../utils/async-handler.js';
+import { VehicleController } from './vehicle.controller.js';
+import {
+  createVehicleValidation,
+  updateVehicleIdValidation,
+  vehicleIdValidation,
+  vehicleListValidation,
+} from './vehicle.validation.js';
+
+const controller = new VehicleController();
+export const vehicleRouter = Router();
+vehicleRouter.get(
+  '/',
+  validate(vehicleListValidation),
+  asyncHandler(controller.list),
+);
+vehicleRouter.get(
+  '/:id',
+  validate(vehicleIdValidation),
+  asyncHandler(controller.get),
+);
+vehicleRouter.post(
+  '/',
+  vehiclePhotoUpload.single('photo'),
+  validate(createVehicleValidation),
+  asyncHandler(controller.create),
+);
+vehicleRouter.put(
+  '/:id',
+  vehiclePhotoUpload.single('photo'),
+  validate(updateVehicleIdValidation),
+  asyncHandler(controller.update),
+);
+vehicleRouter.delete(
+  '/:id',
+  validate(vehicleIdValidation),
+  asyncHandler(controller.delete),
+);
