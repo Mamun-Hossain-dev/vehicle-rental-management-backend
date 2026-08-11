@@ -9,10 +9,12 @@ Node.js 20+, TypeScript, Express 5, PostgreSQL 14+, Knex, Joi, JWT, bcryptjs, Mu
 ## Features
 
 - Staff login and JWT-protected business routes
+- Staff registration and failed-login rate limiting
 - Vehicle CRUD, pagination/filter/search, local photos, soft deletion
 - Rental filtering, inclusive pricing, overlap prevention, cancellation
 - SQL monthly report with clipped rental days and highest revenue vehicle
 - Strict TypeScript, centralized validation/errors, migrations and seed fixtures
+- Interactive OpenAPI/Swagger documentation
 
 ## Structure
 
@@ -49,33 +51,54 @@ npm start
 
 Configure all database, pool, JWT, port, and upload values in `.env`. `JWT_SECRET` must be at least 32 characters. Upload directory is created automatically.
 
+API base URL: `http://localhost:3000/api/v1`
+
+Swagger UI: `http://localhost:3000/api/v1/docs`
+
+OpenAPI JSON: `http://localhost:3000/api/v1/docs/openapi.json`
+
 Development seed login: `admin@example.com` / `password123`. Never use it in production.
 
 ## Endpoints
 
-All endpoints except login and health require `Authorization: Bearer <token>`.
+Vehicle, rental, and report endpoints require `Authorization: Bearer <token>`. Health, documentation, registration, and login are public.
 
-| Method | Path                                                                            | Purpose                                            |
-| ------ | ------------------------------------------------------------------------------- | -------------------------------------------------- |
-| GET    | `/health`                                                                       | Health check                                       |
-| POST   | `/auth/login`                                                                   | Staff login                                        |
-| GET    | `/vehicles?page=1&limit=10&category=SUV&search=Toyota`                          | List vehicles                                      |
-| GET    | `/vehicles/:id`                                                                 | Vehicle detail                                     |
-| POST   | `/vehicles`                                                                     | Create using multipart fields and optional `photo` |
-| PUT    | `/vehicles/:id`                                                                 | Update fields/photo                                |
-| DELETE | `/vehicles/:id`                                                                 | Soft delete                                        |
-| GET    | `/rentals?vehicle_id=1&status=booked&start_date=2026-08-01&end_date=2026-08-31` | Filter rentals                                     |
-| GET    | `/rentals/:id`                                                                  | Rental detail                                      |
-| POST   | `/rentals`                                                                      | Create rental; amount calculated server-side       |
-| PUT    | `/rentals/:id`                                                                  | Update and recalculate rental                      |
-| DELETE | `/rentals/:id`                                                                  | Cancel rental                                      |
-| GET    | `/reports/rentals?month=2026-08&vehicle_id=1`                                   | Monthly report; vehicle filter optional            |
+| Method | Path                                                                                   | Purpose                                            |
+| ------ | -------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| GET    | `/api/v1/health`                                                                       | Health check                                       |
+| GET    | `/api/v1/docs`                                                                         | Swagger UI                                         |
+| GET    | `/api/v1/docs/openapi.json`                                                            | OpenAPI document                                   |
+| POST   | `/api/v1/auth/register`                                                                | Staff registration                                 |
+| POST   | `/api/v1/auth/login`                                                                   | Staff login                                        |
+| GET    | `/api/v1/vehicles?page=1&limit=10&category=SUV&search=Toyota`                          | List vehicles                                      |
+| GET    | `/api/v1/vehicles/:id`                                                                 | Vehicle detail                                     |
+| POST   | `/api/v1/vehicles`                                                                     | Create using multipart fields and optional `photo` |
+| PUT    | `/api/v1/vehicles/:id`                                                                 | Update fields/photo                                |
+| DELETE | `/api/v1/vehicles/:id`                                                                 | Soft delete                                        |
+| GET    | `/api/v1/rentals?vehicle_id=1&status=booked&start_date=2026-08-01&end_date=2026-08-31` | Filter rentals                                     |
+| GET    | `/api/v1/rentals/:id`                                                                  | Rental detail                                      |
+| POST   | `/api/v1/rentals`                                                                      | Create rental; amount calculated server-side       |
+| PUT    | `/api/v1/rentals/:id`                                                                  | Update and recalculate rental                      |
+| DELETE | `/api/v1/rentals/:id`                                                                  | Cancel rental                                      |
+| GET    | `/api/v1/reports/rentals?month=2026-08&vehicle_id=1`                                   | Monthly report; vehicle filter optional            |
 
 Login body:
 
 ```json
 { "email": "admin@example.com", "password": "password123" }
 ```
+
+Register body:
+
+```json
+{
+  "name": "Admin User",
+  "email": "admin@example.com",
+  "password": "password123"
+}
+```
+
+Login allows five failed attempts per IP in 15 minutes. Successful logins do not consume the limit.
 
 Rental create body:
 
@@ -108,7 +131,7 @@ Update excludes its own ID. Create/update runs in a transaction and locks involv
 
 The report uses a Knex subquery to select non-cancelled rentals overlapping the requested month. The service clips each range to the month and calculates inclusive days with decimal-safe money helpers. July 29–August 3 contributes three August days and `9000.00` at `3000.00/day`. Active vehicles with no matching rental appear with zeros. Highest revenue uses monthly clipped revenue; ties use lowest vehicle ID. Soft-deleted vehicles are omitted, while their rentals remain because vehicle deletion uses `ON DELETE RESTRICT` and application soft deletion.
 
-Photo types: JPEG, PNG, WebP. Maximum 5 MB. New photo replacement removes the old local file after a successful database update. Files are served from `/uploads/vehicles/<filename>`.
+Photo types: JPEG, PNG, WebP. Maximum 5 MB. New photo replacement removes the old local file after a successful database update. Files are served from `/api/v1/uploads/vehicles/<filename>`.
 
 ## Scripts
 

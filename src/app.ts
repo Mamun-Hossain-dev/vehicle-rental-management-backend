@@ -1,6 +1,8 @@
 import path from 'node:path';
 import express from 'express';
+import swaggerUi from 'swagger-ui-express';
 import { env } from './config/env.js';
+import { openApiDocument } from './docs/openapi.js';
 import { authenticate } from './middleware/auth.middleware.js';
 import { errorHandler } from './middleware/error.middleware.js';
 import { notFound } from './middleware/not-found.middleware.js';
@@ -11,13 +13,17 @@ import { vehicleRouter } from './modules/vehicles/vehicle.routes.js';
 
 export const app = express();
 app.use(express.json({ limit: '100kb' }));
-app.use('/uploads/vehicles', express.static(path.resolve(env.UPLOAD_PATH)));
-app.get('/health', (_req, res) =>
+const api = express.Router();
+api.use('/uploads/vehicles', express.static(path.resolve(env.UPLOAD_PATH)));
+api.get('/docs/openapi.json', (_req, res) => res.json(openApiDocument));
+api.use('/docs', swaggerUi.serve, swaggerUi.setup(openApiDocument));
+api.get('/health', (_req, res) =>
   res.json({ success: true, data: { status: 'ok' } }),
 );
-app.use('/auth', authRouter);
-app.use('/vehicles', authenticate, vehicleRouter);
-app.use('/rentals', authenticate, rentalRouter);
-app.use('/reports', authenticate, reportRouter);
+api.use('/auth', authRouter);
+api.use('/vehicles', authenticate, vehicleRouter);
+api.use('/rentals', authenticate, rentalRouter);
+api.use('/reports', authenticate, reportRouter);
+app.use('/api/v1', api);
 app.use(notFound);
 app.use(errorHandler);

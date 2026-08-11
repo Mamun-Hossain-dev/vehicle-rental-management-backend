@@ -27,6 +27,7 @@ Deletion over addition.
 - `src/app.ts`: Express composition, static uploads, routes, error middleware.
 - `src/config`: validated environment and Knex singleton.
 - `src/middleware`: auth, validation, upload, errors.
+- `src/docs/openapi.ts`: OpenAPI source for Swagger UI and JSON.
 - `src/modules/*`: route -> controller -> service -> repository.
 - `database/migrations`: PostgreSQL schema.
 - `database/seeds`: development fixtures.
@@ -41,7 +42,9 @@ Deletion over addition.
 - `total_amount` is server-calculated with decimal-safe string/BigInt helpers.
 - Active overlap statuses: `booked`, `ongoing`, `completed`. `cancelled` never blocks.
 - Create/update rentals inside a transaction with a vehicle row `FOR UPDATE` lock.
-- Protected route groups: `/vehicles`, `/rentals`, `/reports`.
+- API base path: `/api/v1`.
+- Protected route groups: `/api/v1/vehicles`, `/api/v1/rentals`, `/api/v1/reports`.
+- Public auth routes: `/api/v1/auth/register`, `/api/v1/auth/login`; login rate limit is 5 failures per 15 minutes.
 - Do not expose database errors or secrets.
 
 ## Fast verification
@@ -63,6 +66,7 @@ npm run seed
 
 - Update Joi schemas when input shape changes.
 - Keep `.env.example`, README endpoint docs, and scripts accurate.
+- Keep OpenAPI paths and schemas aligned with routes and Joi validation.
 - Check create and update overlap paths together.
 - Check monthly report clips each rental to requested month boundaries.
 - No TODO, placeholder, dead abstraction, or unrequested dependency.
