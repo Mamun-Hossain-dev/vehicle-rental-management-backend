@@ -1,34 +1,63 @@
 import type { Knex } from 'knex';
 import { db } from '../../config/database.js';
-import type { Rental } from '../rentals/rental.types.js';
-import type { ReportRow } from './report.types.js';
+import type { VehicleReport } from './report.types.js';
 
 export class ReportRepository {
   constructor(private readonly database: Knex = db) {}
 
-  monthly(
+  async monthly(
     monthStart: string,
     monthEnd: string,
     vehicleId?: number,
-  ): Promise<ReportRow[]> {
-    const rentals = this.database<Rental>('rentals')
-      .select('id', 'vehicle_id', 'start_date', 'end_date')
-      .whereNot('status', 'cancelled')
-      .where('start_date', '<=', monthEnd)
-      .where('end_date', '>=', monthStart);
-    const query = this.database('vehicles as v')
-      .leftJoin(rentals.as('r'), 'r.vehicle_id', 'v.id')
-      .whereNull('v.deleted_at')
-      .select<ReportRow[]>(
-        'v.id',
-        'v.name',
-        'v.daily_rate',
-        'r.id as rental_id',
-        'r.start_date',
-        'r.end_date',
-      )
-      .orderBy('v.id');
-    if (vehicleId) query.where('v.id', vehicleId);
-    return query;
+  ): Promise<VehicleReport[]> {
+    const result = await this.database.raw<{ rows: VehicleReport[] }>(
+      `
+        WITH report_params AS (
+          SELECT
+            ?::date AS month_start,
+            ?::date AS month_end,
+            ?::integer AS vehicle_id
+        )
+        SELECT
+          v.id,
+          v.name,
+          COUNT(r.id)::integer AS total_bookings,
+          COALESCE(
+            SUM(
+              LEAST(r.end_date, p.month_end)
+              - GREATEST(r.start_date, p.month_start)
+              + 1
+            ),
+            0
+          )::integer AS days_rented,
+          COALESCE(
+            SUM(
+              (
+                r.total_amount
+                / (r.end_date - r.start_date + 1)
+              ) * (
+                LEAST(r.end_date, p.month_end)
+                - GREATEST(r.start_date, p.month_start)
+                + 1
+              )
+            ),
+            0
+          )::numeric(12, 2)::text AS revenue
+        FROM vehicles AS v
+        CROSS JOIN report_params AS p
+        LEFT JOIN rentals AS r
+          ON r.vehicle_id = v.id
+          AND r.status <> 'cancelled'
+          AND r.start_date <= p.month_end
+          AND r.end_date >= p.month_start
+        WHERE v.deleted_at IS NULL
+          AND (p.vehicle_id IS NULL OR v.id = p.vehicle_id)
+        GROUP BY v.id, v.name
+        ORDER BY v.id
+      `,
+      [monthStart, monthEnd, vehicleId ?? null],
+    );
+
+    return result.rows;
   }
 }

@@ -1,5 +1,4 @@
-import { inclusiveDays } from '../../utils/date.js';
-import { addMoney, compareMoney, multiplyMoney } from '../../utils/money.js';
+import { compareMoney } from '../../utils/money.js';
 import { ReportRepository } from './report.repository.js';
 import type { ReportQuery, VehicleReport } from './report.types.js';
 
@@ -19,35 +18,11 @@ export class ReportService {
       monthEnd,
       query.vehicle_id,
     );
-    const reports = new Map<number, VehicleReport>();
-    for (const row of rows) {
-      const report = reports.get(row.id) ?? {
-        id: row.id,
-        name: row.name,
-        total_bookings: 0,
-        days_rented: 0,
-        revenue: '0.00',
-      };
-      if (row.rental_id && row.start_date && row.end_date) {
-        const days = inclusiveDays(
-          row.start_date > monthStart ? row.start_date : monthStart,
-          row.end_date < monthEnd ? row.end_date : monthEnd,
-        );
-        report.total_bookings += 1;
-        report.days_rented += days;
-        report.revenue = addMoney(
-          report.revenue,
-          multiplyMoney(row.daily_rate, days),
-        );
-      }
-      reports.set(row.id, report);
-    }
-    const vehicles = [...reports.values()];
-    const highest = [...vehicles].sort(
+    const highest = [...rows].sort(
       (a, b) => compareMoney(b.revenue, a.revenue) || a.id - b.id,
     )[0];
     return {
-      vehicles,
+      vehicles: rows,
       highest_revenue_vehicle:
         highest && compareMoney(highest.revenue, '0.00') > 0 ? highest : null,
     };

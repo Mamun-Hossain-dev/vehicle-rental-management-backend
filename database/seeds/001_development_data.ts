@@ -1,14 +1,19 @@
 import type { Knex } from 'knex';
+import { env } from '../../src/config/env.js';
 import { hashPassword } from '../../src/utils/password.js';
 
 export const seed = async (knex: Knex): Promise<void> => {
+  if (env.NODE_ENV === 'production') {
+    throw new Error('Development seed is disabled in production');
+  }
+
   await knex('rentals').del();
   await knex('vehicles').del();
   await knex('staff').del();
 
   await knex('staff').insert({
-    name: 'Development Admin',
-    email: 'admin@example.com',
+    name: 'Development Staff',
+    email: 'staff@example.com',
     password_hash: await hashPassword('password123'),
   });
   const vehicles = await knex('vehicles')

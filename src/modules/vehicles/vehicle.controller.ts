@@ -1,6 +1,9 @@
 import type { Request, Response } from 'express';
+import type { ApiResponse } from '../../types/api.js';
+import { sendResponse } from '../../utils/send-response.js';
 import { VehicleService } from './vehicle.service.js';
 import type {
+  Vehicle,
   VehicleFilters,
   VehicleInput,
   VehicleUpdate,
@@ -9,34 +12,38 @@ import type {
 export class VehicleController {
   constructor(private readonly service = new VehicleService()) {}
 
-  list = async (req: Request, res: Response): Promise<void> => {
+  list = async (
+    req: Request,
+    res: Response<ApiResponse<Vehicle[]>>,
+  ): Promise<void> => {
     const result = await this.service.list(
       req.validatedQuery as VehicleFilters,
     );
-    res.json({ success: true, data: result.data, meta: result.meta });
+    sendResponse(res, { data: result.data, meta: result.meta });
   };
-  get = async (req: Request<{ id: string }>, res: Response): Promise<void> => {
-    res.json({
-      success: true,
+  get = async (
+    req: Request<{ id: string }>,
+    res: Response<ApiResponse<Vehicle>>,
+  ): Promise<void> => {
+    sendResponse(res, {
       data: await this.service.get(Number(req.params.id)),
     });
   };
   create = async (
     req: Request<object, object, VehicleInput>,
-    res: Response,
+    res: Response<ApiResponse<Vehicle>>,
   ): Promise<void> => {
-    res.status(201).json({
-      success: true,
+    sendResponse(res, {
+      status: 201,
       message: 'Vehicle created successfully',
       data: await this.service.create(req.body, req.file),
     });
   };
   update = async (
     req: Request<{ id: string }, object, VehicleUpdate>,
-    res: Response,
+    res: Response<ApiResponse<Vehicle>>,
   ): Promise<void> => {
-    res.json({
-      success: true,
+    sendResponse(res, {
       message: 'Vehicle updated successfully',
       data: await this.service.update(
         Number(req.params.id),
@@ -47,9 +54,9 @@ export class VehicleController {
   };
   delete = async (
     req: Request<{ id: string }>,
-    res: Response,
+    res: Response<ApiResponse>,
   ): Promise<void> => {
     await this.service.delete(Number(req.params.id));
-    res.json({ success: true, message: 'Vehicle deleted successfully' });
+    sendResponse(res, { message: 'Vehicle deleted successfully' });
   };
 }

@@ -1,5 +1,9 @@
-import 'dotenv/config';
+import path from 'node:path';
+import { config } from 'dotenv';
 import Joi from 'joi';
+
+const projectRoot = process.env.INIT_CWD ?? process.env.PWD ?? process.cwd();
+config({ path: path.join(projectRoot, '.env'), quiet: true });
 
 const schema = Joi.object({
   NODE_ENV: Joi.string()

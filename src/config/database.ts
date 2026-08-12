@@ -1,5 +1,8 @@
 import knex, { type Knex } from 'knex';
+import path from 'node:path';
 import { env } from './env.js';
+
+const projectRoot = process.env.INIT_CWD ?? process.env.PWD ?? process.cwd();
 
 const databaseConfig: Knex.Config = {
   client: 'pg',
@@ -11,8 +14,14 @@ const databaseConfig: Knex.Config = {
     password: env.DB_PASSWORD,
   },
   pool: { min: env.DB_POOL_MIN, max: env.DB_POOL_MAX },
-  migrations: { directory: './database/migrations', extension: 'ts' },
-  seeds: { directory: './database/seeds', extension: 'ts' },
+  migrations: {
+    directory: path.join(projectRoot, 'database/migrations'),
+    extension: 'ts',
+  },
+  seeds: {
+    directory: path.join(projectRoot, 'database/seeds'),
+    extension: 'ts',
+  },
 };
 
 export const db = knex(databaseConfig);

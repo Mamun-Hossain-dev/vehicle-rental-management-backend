@@ -35,7 +35,8 @@ Deletion over addition.
 ## Non-negotiable rules
 
 - Strict TypeScript. Never use `any`.
-- PostgreSQL + Knex query-builder only. Do not use raw database queries.
+- PostgreSQL + Knex. Use parameterized raw SQL for complex overlap/report
+  queries; use Knex query-builder for ordinary CRUD.
 - Controllers: HTTP only. Services: business rules. Repositories: database only.
 - Vehicle deletes are soft deletes. Rental deletes set `status = cancelled`.
 - Rental dates are inclusive date-only strings. Do not round-trip them through JS `Date`.
@@ -44,22 +45,22 @@ Deletion over addition.
 - Create/update rentals inside a transaction with a vehicle row `FOR UPDATE` lock.
 - API base path: `/api/v1`.
 - Protected route groups: `/api/v1/vehicles`, `/api/v1/rentals`, `/api/v1/reports`.
-- Public auth routes: `/api/v1/auth/register`, `/api/v1/auth/login`; login rate limit is 5 failures per 15 minutes.
+- Public auth route: `/api/v1/auth/login`; login rate limit is 5 failures per 15 minutes.
 - Do not expose database errors or secrets.
 
 ## Fast verification
 
 ```bash
-npm run build
-npm run lint
-npm run format:check
+pnpm build
+pnpm lint
+pnpm format:check
 ```
 
 Database-backed verification needs PostgreSQL and `.env`:
 
 ```bash
-npm run migrate
-npm run seed
+pnpm migrate
+pnpm seed
 ```
 
 ## Change checklist

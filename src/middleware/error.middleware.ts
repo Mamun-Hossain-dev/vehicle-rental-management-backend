@@ -4,6 +4,7 @@ import type { ErrorRequestHandler } from 'express';
 import multer from 'multer';
 import { env } from '../config/env.js';
 import { ApiError } from '../utils/api-error.js';
+import { sendResponse } from '../utils/send-response.js';
 
 interface DatabaseError extends Error {
   code?: string;
@@ -24,22 +25,33 @@ export const errorHandler: ErrorRequestHandler = (
     ).catch(() => undefined);
   }
   if (error instanceof ApiError) {
-    res
-      .status(error.statusCode)
-      .json({ success: false, message: error.message });
+    sendResponse(res, {
+      success: false,
+      status: error.statusCode,
+      message: error.message,
+    });
     return;
   }
   if (error instanceof multer.MulterError) {
-    res.status(400).json({ success: false, message: error.message });
+    sendResponse(res, {
+      success: false,
+      status: 400,
+      message: error.message,
+    });
     return;
   }
   if (error.code === '23505') {
-    res.status(409).json({
+    sendResponse(res, {
       success: false,
+      status: 409,
       message: 'A record with that unique value exists',
     });
     return;
   }
   if (env.NODE_ENV !== 'test') console.error(error);
-  res.status(500).json({ success: false, message: 'Internal server error' });
+  sendResponse(res, {
+    success: false,
+    status: 500,
+    message: 'Internal server error',
+  });
 };
