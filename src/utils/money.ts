@@ -14,9 +14,6 @@ const fromScaled = (amount: bigint): string =>
 export const multiplyMoney = (amount: string, count: number): string =>
   fromScaled(toScaled(amount) * BigInt(count));
 
-export const addMoney = (left: string, right: string): string =>
-  fromScaled(toScaled(left) + toScaled(right));
-
 export const compareMoney = (left: string, right: string): number =>
   toScaled(left) > toScaled(right)
     ? 1

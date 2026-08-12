@@ -75,15 +75,18 @@ export class RentalService {
       const status = input.status ?? current.status;
       if (status !== 'cancelled')
         await this.ensureAvailable(trx, vehicleId, start, end, id);
+      const pricingChanged =
+        input.vehicle_id !== undefined ||
+        input.start_date !== undefined ||
+        input.end_date !== undefined;
       return this.repository.update(trx, id, {
         ...input,
         vehicle_id: vehicleId,
         start_date: start,
         end_date: end,
-        total_amount: multiplyMoney(
-          vehicle.daily_rate,
-          inclusiveDays(start, end),
-        ),
+        total_amount: pricingChanged
+          ? multiplyMoney(vehicle.daily_rate, inclusiveDays(start, end))
+          : current.total_amount,
       });
     });
   }

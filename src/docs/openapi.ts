@@ -48,7 +48,7 @@ export const openApiDocument: JsonObject = {
           email: {
             type: 'string',
             format: 'email',
-            example: 'admin@example.com',
+            example: 'staff@example.com',
           },
           password: {
             type: 'string',
@@ -57,21 +57,19 @@ export const openApiDocument: JsonObject = {
           },
         },
       },
-      RegisterInput: {
+      LoginResult: {
         type: 'object',
-        required: ['name', 'email', 'password'],
         properties: {
-          name: { type: 'string', example: 'Admin User' },
-          email: {
-            type: 'string',
-            format: 'email',
-            example: 'admin@example.com',
-          },
-          password: {
-            type: 'string',
-            format: 'password',
-            minLength: 8,
-            example: 'password123',
+          access_token: { type: 'string' },
+          staff: {
+            type: 'object',
+            properties: {
+              id: { type: 'integer' },
+              name: { type: 'string' },
+              email: { type: 'string', format: 'email' },
+              role: { type: 'string', enum: ['staff'] },
+              created_at: { type: 'string', format: 'date-time' },
+            },
           },
         },
       },
@@ -139,31 +137,12 @@ export const openApiDocument: JsonObject = {
           },
         },
         responses: {
-          200: { description: 'JWT issued' },
+          200: {
+            description: 'Access token and authenticated staff information',
+          },
           400: errors[400],
           401: { description: 'Invalid email or password' },
           429: { description: 'Too many failed login attempts' },
-        },
-      },
-    },
-    '/auth/register': {
-      post: {
-        tags: ['Auth'],
-        summary: 'Register staff account',
-        requestBody: {
-          required: true,
-          content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/RegisterInput' },
-            },
-          },
-        },
-        responses: {
-          201: {
-            description: 'Staff registered; password hash is not returned',
-          },
-          400: errors[400],
-          409: { description: 'Email already registered' },
         },
       },
     },
