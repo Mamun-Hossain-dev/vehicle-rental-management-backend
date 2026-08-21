@@ -15,14 +15,14 @@ export class VehicleService {
 
   async list(filters: VehicleFilters) {
     const { rows, total } = await this.repository.findAll(filters);
+    const { category, search, ...metaFilters } = filters;
+    console.log('category&search', category, search);
     return {
       data: rows,
       meta: {
-        ...filters,
-        category: undefined,
-        search: undefined,
+        ...metaFilters,
         total,
-        totalPages: Math.ceil(total / filters.limit),
+        totalPages: Math.ceil(total / (filters.limit || 1)),
       },
     };
   }
@@ -46,6 +46,11 @@ export class VehicleService {
     file?: Express.Multer.File,
   ): Promise<Vehicle> {
     const current = await this.get(id);
+    // if (file && current.photo_path === file.filename)
+    //   throw new ApiError(
+    //     400,
+    //     'New photo must be different from the current one',
+    //   );
     try {
       const vehicle = await this.repository.update(id, {
         ...input,

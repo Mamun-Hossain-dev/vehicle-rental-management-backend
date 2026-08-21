@@ -21,6 +21,7 @@ export class VehicleController {
     );
     sendResponse(res, { data: result.data, meta: result.meta });
   };
+
   get = async (
     req: Request<{ id: string }>,
     res: Response<ApiResponse<Vehicle>>,
@@ -29,6 +30,7 @@ export class VehicleController {
       data: await this.service.get(Number(req.params.id)),
     });
   };
+
   create = async (
     req: Request<object, object, VehicleInput>,
     res: Response<ApiResponse<Vehicle>>,
@@ -39,6 +41,7 @@ export class VehicleController {
       data: await this.service.create(req.body, req.file),
     });
   };
+
   update = async (
     req: Request<{ id: string }, object, VehicleUpdate>,
     res: Response<ApiResponse<Vehicle>>,
@@ -52,6 +55,7 @@ export class VehicleController {
       ),
     });
   };
+
   delete = async (
     req: Request<{ id: string }>,
     res: Response<ApiResponse>,
