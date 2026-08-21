@@ -21,7 +21,6 @@ export class VehicleController {
     );
     sendResponse(res, { data: result.data, meta: result.meta });
   };
-
   get = async (
     req: Request<{ id: string }>,
     res: Response<ApiResponse<Vehicle>>,
